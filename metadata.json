@@ -1,0 +1,12 @@
+{
+  "name": "Pyramid 90",
+  "description": "تطبيق إدارة الوقت والمذاكرة بنظام الهرم 90",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "screen-wake-lock"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
