@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TimerMode } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Pause, Play, X, RotateCcw, AlertTriangle, Smartphone } from 'lucide-react';
+import { Pause, Play, X, RotateCcw, AlertTriangle, Smartphone, RotateCw } from 'lucide-react';
 import SupervisorCamera from './SupervisorCamera';
 
 interface TimerScreenProps {
@@ -56,6 +56,17 @@ function formatTime(seconds: number) {
 export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectName, isLandscape, onToggleLandscape, onStop, onTogglePause, onPauseTimer, onResumeTimer }: TimerScreenProps) {
   if (mode === 'IDLE') return null;
 
+  const [cameraRotation, setCameraRotation] = useState<number>(0);
+
+  // Sync camera rotation with landscape mode changes
+  useEffect(() => {
+    setCameraRotation(isLandscape ? 270 : 0);
+  }, [isLandscape]);
+
+  const handleRotateCamera = () => {
+    setCameraRotation((prev) => (prev + 90) % 360);
+  };
+
   const config = MODE_CONFIG[mode];
   const isPyramidMode = mode === 'FOCUS' || mode === 'RECALL';
   const currentCycleInPyramid = (cycles % 3) + 1; // 1, 2, or 3
@@ -65,53 +76,49 @@ export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectN
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 1.05 }}
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center p-6 ${config.color} transition-colors duration-1000 overflow-hidden drop-shadow-xl`}
+      className={`${isLandscape ? 'absolute' : 'fixed'} inset-0 z-50 flex flex-col items-center justify-center p-6 ${config.color} transition-colors duration-1000 overflow-hidden drop-shadow-xl`}
     >
-      <SupervisorCamera onPause={onPauseTimer} onResume={onResumeTimer} />
+      <SupervisorCamera 
+        onPause={onPauseTimer} 
+        onResume={onResumeTimer} 
+        isLandscape={isLandscape} 
+        cameraRotation={cameraRotation}
+      />
 
       {/* Top Bar */}
-      <div className={`absolute ${isLandscape ? 'top-4 right-4 left-4' : 'top-6 right-6'} flex flex-col sm:flex-row items-end sm:items-center justify-between gap-3 text-white/80 pointer-events-auto w-auto`}>
-        <div className="font-semibold text-lg flex items-center gap-2 bg-black/10 px-4 py-2 rounded-full backdrop-blur-sm">
+      <div className={`absolute ${isLandscape ? 'top-4 right-4 left-4' : 'top-6 right-6 left-6'} flex items-center justify-between gap-3 text-white/80 pointer-events-auto z-20`}>
+        <div className="font-semibold text-lg flex items-center gap-2 bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
           {subjectName && <span>{subjectName}</span>}
           {subjectName && <span className="w-1.5 h-1.5 rounded-full bg-white/50" />}
           <span>{config.label}</span>
         </div>
-        {!isLandscape && (
-          <div className="flex gap-2">
-            <button 
-              onClick={onToggleLandscape}
-              className="p-3 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-sm transition-colors"
-              title="تغيير اتجاه الشاشة"
-            >
-              <Smartphone size={24} className="rotate-0" />
-            </button>
-            <button 
-              onClick={onStop}
-              className="p-3 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-sm transition-colors"
-            >
-              <X size={24} />
-            </button>
-          </div>
-        )}
-      </div>
-      
-      {isLandscape && (
-        <div className="absolute top-4 left-4 flex gap-2 z-10">
+
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={handleRotateCamera}
+            className="p-3 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md border border-white/10 transition-all shadow-lg flex items-center gap-1"
+            title={`تدوير الكاميرا (${cameraRotation}°)`}
+          >
+            <RotateCw size={20} />
+          </button>
+
           <button 
             onClick={onToggleLandscape}
-            className="p-2 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-sm transition-colors"
+            className="p-3 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md border border-white/10 transition-all shadow-lg"
             title="تغيير اتجاه الشاشة"
           >
-            <Smartphone size={20} className="rotate-90" />
+            <Smartphone size={20} className={isLandscape ? "rotate-90" : "rotate-0"} />
           </button>
+
           <button 
             onClick={onStop}
-            className="p-2 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-sm transition-colors"
+            className="p-3 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md border border-white/10 transition-all shadow-lg"
+            title="إغلاق"
           >
             <X size={20} />
           </button>
         </div>
-      )}
+      </div>
 
       {/* Main Timer Display */}
       <div className={`flex flex-col items-center text-center max-w-lg w-full relative ${isLandscape ? 'mt-4' : ''}`}>

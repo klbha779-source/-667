@@ -4,9 +4,16 @@ import * as faceapi from '@vladmandic/face-api';
 interface SupervisorCameraProps {
   onPause: () => void;
   onResume: () => void;
+  isLandscape?: boolean;
+  cameraRotation?: number;
 }
 
-export default function SupervisorCamera({ onPause, onResume }: SupervisorCameraProps) {
+export default function SupervisorCamera({ 
+  onPause, 
+  onResume, 
+  isLandscape = false,
+  cameraRotation = 0 
+}: SupervisorCameraProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
@@ -88,9 +95,12 @@ export default function SupervisorCamera({ onPause, onResume }: SupervisorCamera
         autoPlay
         playsInline
         muted
-        className="w-full h-full object-cover opacity-30" // 30% opacity to act as a background
+        style={{
+          transform: `translate(-50%, -50%) rotate(${cameraRotation}deg) scaleX(-1)`,
+        }}
+        className="absolute top-1/2 left-1/2 w-[160vmax] h-[160vmax] object-cover opacity-35 transition-transform duration-300 pointer-events-none"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none" />
     </div>
   );
 }
