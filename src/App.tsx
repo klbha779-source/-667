@@ -2,12 +2,18 @@ import React, { useState } from 'react';
 import { Subject } from './types';
 import Dashboard from './components/Dashboard';
 import TimerScreen from './components/TimerScreen';
+import StatsView from './components/StatsView';
 import { usePyramidTimer } from './hooks/usePyramidTimer';
 import { AnimatePresence } from 'motion/react';
 import { BarChart3, Home, Smartphone } from 'lucide-react';
 
 const DEFAULT_SUBJECTS: Subject[] = [
   { id: 'math', name: 'الرياضيات', color: 'bg-blue-500' },
+  { id: 'physics', name: 'الفيزياء', color: 'bg-indigo-500' },
+  { id: 'biology', name: 'الأحياء', color: 'bg-emerald-500' },
+  { id: 'chemistry', name: 'الكيمياء', color: 'bg-purple-500' },
+  { id: 'arabic', name: 'اللغة العربية', color: 'bg-amber-500' },
+  { id: 'english', name: 'اللغة الإنجليزية', color: 'bg-rose-500' },
 ];
 
 export default function App() {
@@ -21,17 +27,25 @@ export default function App() {
     isActive,
     cycles,
     todayFocusSeconds,
+    todayDowntimeSeconds,
+    todayAbsencesCount,
+    sessionHistory,
+    hasSavedSession,
+    savedSessionInfo,
+    restoreSavedSession,
+    discardSavedSession,
     activeSubject,
     startDawnReview,
     startPyramid,
     stopTimer,
     togglePause,
     pauseTimer,
-    resumeTimer
+    resumeTimer,
   } = usePyramidTimer();
 
   const getSubjectName = (id: string | null) => {
-    return subjects.find(s => s.id === id)?.name;
+    if (id === 'dawn') return 'مراجعة الفجر';
+    return subjects.find(s => s.id === id)?.name || 'جلسة هرمية';
   };
 
   const toggleLandscape = async () => {
@@ -89,17 +103,21 @@ export default function App() {
             onStartPyramid={startPyramid}
             onStartDawnReview={startDawnReview}
             todayFocusSeconds={todayFocusSeconds}
+            hasSavedSession={hasSavedSession}
+            savedSessionInfo={savedSessionInfo}
+            onRestoreSavedSession={restoreSavedSession}
+            onDiscardSavedSession={discardSavedSession}
           />
         )}
 
         {activeTab === 'stats' && (
-          <div className="max-w-2xl mx-auto p-6 animate-in fade-in">
-            <h2 className="text-2xl font-bold mb-6">الإحصائيات والتحليل</h2>
-            <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col gap-4 items-center justify-center py-16">
-              <BarChart3 size={48} className="text-gray-300" />
-              <p className="text-gray-500">سيتم إضافة الرسوم البيانية الأسبوعية قريباً</p>
-            </div>
-          </div>
+          <StatsView 
+            todayFocusSeconds={todayFocusSeconds}
+            todayDowntimeSeconds={todayDowntimeSeconds}
+            todayAbsencesCount={todayAbsencesCount}
+            sessionHistory={sessionHistory}
+            subjects={subjects}
+          />
         )}
       </main>
 
@@ -123,7 +141,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Timer Overlay overlay */}
+      {/* Timer Overlay */}
       <AnimatePresence>
         {mode !== 'IDLE' && (
           <TimerScreen 

@@ -1,25 +1,98 @@
 import React, { useState } from 'react';
-import { Subject } from '../types';
-import { Play, Sunrise, BookOpen, Clock, Settings, Bot } from 'lucide-react';
+import { Subject, SavedSessionState } from '../types';
+import { Play, Sunrise, BookOpen, Bot, RotateCcw, RefreshCw, Clock, UserX } from 'lucide-react';
 
 interface DashboardProps {
   subjects: Subject[];
   onStartPyramid: (subjectId: string) => void;
   onStartDawnReview: () => void;
   todayFocusSeconds: number;
+  hasSavedSession: boolean;
+  savedSessionInfo: SavedSessionState | null;
+  onRestoreSavedSession: () => void;
+  onDiscardSavedSession: () => void;
 }
 
 const TEN_HOURS_SEC = 10 * 60 * 60;
 
-export default function Dashboard({ subjects, onStartPyramid, onStartDawnReview, todayFocusSeconds }: DashboardProps) {
+export default function Dashboard({
+  subjects,
+  onStartPyramid,
+  onStartDawnReview,
+  todayFocusSeconds,
+  hasSavedSession,
+  savedSessionInfo,
+  onRestoreSavedSession,
+  onDiscardSavedSession,
+}: DashboardProps) {
   const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0]?.id || '');
-  
+
   const progressPercent = Math.min((todayFocusSeconds / TEN_HOURS_SEC) * 100, 100);
   const hoursCompleted = (todayFocusSeconds / 3600).toFixed(1);
+
+  const getSubjectName = (id: string | null) => {
+    if (id === 'dawn') return 'مراجعة الفجر';
+    return subjects.find((s) => s.id === id)?.name || 'جلسة هرمية';
+  };
+
+  const formatMinSec = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-8 p-6 animate-in fade-in duration-500">
       
+      {/* Session Recovery Banner ("توجد جلسة غير مكتملة - الرجوع إلى الجلسة الأخيرة") */}
+      {hasSavedSession && savedSessionInfo && (
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white p-6 rounded-3xl shadow-xl flex flex-col gap-4 relative overflow-hidden border border-amber-400/50">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl text-white">
+                <RotateCcw size={28} className="animate-spin-slow" />
+              </div>
+              <div>
+                <span className="text-xs uppercase font-bold text-amber-100 tracking-wider">استرجاع الجلسة السابقة</span>
+                <h3 className="text-2xl font-black">جلسة سابقة غير مكتملة</h3>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-amber-50 text-sm leading-relaxed">
+            توجد جلسة دراسية لم تكتمل ({getSubjectName(savedSessionInfo.activeSubject)} - المتبقي: {formatMinSec(savedSessionInfo.timeLeft)}). يمكنك الرجوع إليها فوراً لإكمالها دون فقدان إحصائياتك.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3 bg-black/10 p-3 rounded-2xl text-xs backdrop-blur-sm">
+            <div className="flex items-center gap-1.5">
+              <Clock size={16} className="text-amber-200" />
+              <span>تركيز مُنجز: <strong>{Math.floor(savedSessionInfo.sessionFocusSeconds / 60)} دقيقة</strong></span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <UserX size={16} className="text-amber-200" />
+              <span>التوقفات: <strong>{savedSessionInfo.absencesCount} مرات</strong></span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-1">
+            <button
+              onClick={onRestoreSavedSession}
+              className="flex-1 bg-white text-amber-900 font-extrabold py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 hover:bg-amber-50 transition-all shadow-md active:scale-98 text-base"
+            >
+              <RotateCcw size={20} />
+              الرجوع إلى الجلسة الأخيرة
+            </button>
+            <button
+              onClick={onDiscardSavedSession}
+              className="bg-black/20 hover:bg-black/30 text-white font-bold py-3.5 px-5 rounded-2xl flex items-center justify-center gap-1.5 transition-colors text-sm border border-white/20"
+            >
+              <RefreshCw size={16} />
+              جلسة جديدة
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header & Progress */}
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-end">
@@ -99,7 +172,7 @@ export default function Dashboard({ subjects, onStartPyramid, onStartDawnReview,
         </button>
       </div>
       
-      {/* AI Assistant Note (Easter egg for the second part of prompt) */}
+      {/* AI Assistant Note */}
       <div className="flex items-center gap-3 text-sm text-gray-400 justify-center mt-4">
         <Bot size={16} />
         <p>مساعدك الآلي جاهز لمرافقتك في رحلة التركيز.</p>
