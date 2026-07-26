@@ -85,21 +85,24 @@ export default function SupervisorCamera({
 
     const detect = async () => {
       if (videoRef.current && videoRef.current.readyState === 4) {
-        const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions());
+        // Lower score threshold slightly to reliably detect faces at wider camera angles or distance
+        const detections = await faceapi.detectAllFaces(
+          videoRef.current, 
+          new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.25 })
+        );
         
         if (detections.length > 0) {
-          // Face detected (User is in front of camera)
+          // Person detected in front of camera -> Reset absence counter & auto-resume if paused
           absentFramesRef.current = 0;
           if (!isPresentRef.current) {
             isPresentRef.current = true;
             onResume();
           }
         } else {
-          // No face detected
+          // No person detected -> Count absence frames
           absentFramesRef.current += 1;
-          // Require 8 continuous absent frames (~4 seconds) before pausing
-          // This gives 3 to 5 seconds threshold as requested by user
-          if (absentFramesRef.current >= 8 && isPresentRef.current) {
+          // 6 continuous empty frames at 500ms interval = exactly 3 seconds
+          if (absentFramesRef.current >= 6 && isPresentRef.current) {
             isPresentRef.current = false;
             onPause();
           }
