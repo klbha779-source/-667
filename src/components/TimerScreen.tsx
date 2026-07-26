@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TimerMode } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Pause, Play, X, RotateCcw, AlertTriangle, Smartphone, RotateCw, Mic, MicOff, Volume2 } from 'lucide-react';
+import { Pause, Play, X, RotateCcw, AlertTriangle, Smartphone, RotateCw, Mic, MicOff, Volume2, Maximize2, Minimize2 } from 'lucide-react';
 import SupervisorCamera from './SupervisorCamera';
 import { useVoiceControl } from '../hooks/useVoiceControl';
 
@@ -59,6 +59,7 @@ export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectN
 
   const [cameraRotation, setCameraRotation] = useState<number>(0);
   const [voiceEnabled, setVoiceEnabled] = useState<boolean>(true);
+  const [fitMode, setFitMode] = useState<'contain' | 'cover'>('contain'); // Default to wide room view (100% frame visibility)
 
   // Initialize Voice Control for Arabic speech commands ("وقف العداد", "استمر", etc.)
   const { isListening, lastCommand } = useVoiceControl({
@@ -92,6 +93,7 @@ export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectN
         onResume={onResumeTimer} 
         isLandscape={isLandscape} 
         cameraRotation={cameraRotation}
+        fitMode={fitMode}
       />
 
       {/* Recognized Voice Command Notification Toast */}
@@ -131,6 +133,22 @@ export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectN
             {voiceEnabled ? <Mic size={20} className={isListening ? 'animate-pulse text-emerald-200' : ''} /> : <MicOff size={20} />}
             <span className="text-xs font-medium hidden md:inline">
               {voiceEnabled ? (isListening ? 'الاستماع...' : 'مفعل') : 'غير مفعل'}
+            </span>
+          </button>
+
+          {/* Camera Wide View Toggle Button */}
+          <button 
+            onClick={() => setFitMode(fitMode === 'contain' ? 'cover' : 'contain')}
+            className={`p-3 rounded-full backdrop-blur-md border border-white/10 transition-all shadow-lg flex items-center gap-1.5 ${
+              fitMode === 'contain' 
+                ? 'bg-indigo-600/80 hover:bg-indigo-600 text-white ring-2 ring-indigo-400/50' 
+                : 'bg-black/20 hover:bg-black/40 text-white/70'
+            }`}
+            title={fitMode === 'contain' ? 'الرؤية العريضة مفعّلة (الغرفة كاملة)' : 'تفعيل رؤية الغرفة الكاملة'}
+          >
+            {fitMode === 'contain' ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            <span className="text-xs font-medium hidden lg:inline">
+              {fitMode === 'contain' ? 'زاویة واسعة' : 'ملء الشاشة'}
             </span>
           </button>
 

@@ -6,13 +6,15 @@ interface SupervisorCameraProps {
   onResume: () => void;
   isLandscape?: boolean;
   cameraRotation?: number;
+  fitMode?: 'contain' | 'cover';
 }
 
 export default function SupervisorCamera({ 
   onPause, 
   onResume, 
   isLandscape = false,
-  cameraRotation = 0 
+  cameraRotation = 0,
+  fitMode = 'contain'
 }: SupervisorCameraProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -47,6 +49,21 @@ export default function SupervisorCamera({
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+        }
+
+        // Apply hardware wide-angle / minimum zoom if camera hardware supports it
+        const track = stream.getVideoTracks()[0];
+        if (track) {
+          const capabilities = (track.getCapabilities && track.getCapabilities()) as any;
+          if (capabilities && capabilities.zoom) {
+            try {
+              await track.applyConstraints({
+                advanced: [{ zoom: capabilities.zoom.min }] as any
+              });
+            } catch (e) {
+              console.log('Zoom constraint error:', e);
+            }
+          }
         }
       } catch (err) {
         console.error("Failed to start camera", err);
@@ -107,8 +124,10 @@ export default function SupervisorCamera({
           transform: `translate(-50%, -50%) rotate(${cameraRotation}deg) scaleX(-1)`,
         }}
         className={`absolute top-1/2 left-1/2 ${
-          isRotated90 ? 'w-[100vh] h-[100vw]' : 'w-full h-full'
-        } object-cover opacity-45 transition-all duration-300 pointer-events-none`}
+          fitMode === 'contain' 
+            ? (isRotated90 ? 'w-[100vh] h-[100vw] max-w-[100vh] max-h-[100vw]' : 'w-full h-full max-w-full max-h-full')
+            : (isRotated90 ? 'w-[100vh] h-[100vw] min-w-[100vh] min-h-[100vw]' : 'w-full h-full min-w-full min-h-full')
+        } ${fitMode === 'contain' ? 'object-contain' : 'object-cover'} opacity-55 transition-all duration-300 pointer-events-none`}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/70 pointer-events-none" />
     </div>
