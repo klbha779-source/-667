@@ -37,7 +37,13 @@ export default function SupervisorCamera({
 
     const startVideo = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'user',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          } 
+        });
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -88,8 +94,10 @@ export default function SupervisorCamera({
     return () => clearInterval(interval);
   }, [isModelLoaded, onPause, onResume]);
 
+  const isRotated90 = cameraRotation % 180 !== 0;
+
   return (
-    <div className="absolute inset-0 w-full h-full -z-10 bg-black overflow-hidden pointer-events-none">
+    <div className="absolute inset-0 w-full h-full -z-10 bg-black overflow-hidden pointer-events-none flex items-center justify-center">
       <video
         ref={videoRef}
         autoPlay
@@ -98,9 +106,11 @@ export default function SupervisorCamera({
         style={{
           transform: `translate(-50%, -50%) rotate(${cameraRotation}deg) scaleX(-1)`,
         }}
-        className="absolute top-1/2 left-1/2 w-[160vmax] h-[160vmax] object-cover opacity-35 transition-transform duration-300 pointer-events-none"
+        className={`absolute top-1/2 left-1/2 ${
+          isRotated90 ? 'w-[100vh] h-[100vw]' : 'w-full h-full'
+        } object-cover opacity-45 transition-all duration-300 pointer-events-none`}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/70 pointer-events-none" />
     </div>
   );
 }

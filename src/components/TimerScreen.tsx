@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { TimerMode } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Pause, Play, X, RotateCcw, AlertTriangle, Smartphone, RotateCw } from 'lucide-react';
+import { Pause, Play, X, RotateCcw, AlertTriangle, Smartphone, RotateCw, Mic, MicOff, Volume2 } from 'lucide-react';
 import SupervisorCamera from './SupervisorCamera';
+import { useVoiceControl } from '../hooks/useVoiceControl';
 
 interface TimerScreenProps {
   mode: TimerMode;
@@ -57,6 +58,14 @@ export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectN
   if (mode === 'IDLE') return null;
 
   const [cameraRotation, setCameraRotation] = useState<number>(0);
+  const [voiceEnabled, setVoiceEnabled] = useState<boolean>(true);
+
+  // Initialize Voice Control for Arabic speech commands ("وقف العداد", "استمر", etc.)
+  const { isListening, lastCommand } = useVoiceControl({
+    onPause: onPauseTimer,
+    onResume: onResumeTimer,
+    enabled: voiceEnabled
+  });
 
   // Sync camera rotation with landscape mode changes
   useEffect(() => {
@@ -85,6 +94,21 @@ export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectN
         cameraRotation={cameraRotation}
       />
 
+      {/* Recognized Voice Command Notification Toast */}
+      <AnimatePresence>
+        {lastCommand && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            className="absolute top-20 z-40 bg-emerald-600 text-white font-bold px-6 py-3 rounded-full shadow-2xl backdrop-blur-lg flex items-center gap-2 border border-emerald-400/50"
+          >
+            <Volume2 size={20} className="animate-bounce" />
+            <span>تم استلام أمر صوتی: {lastCommand}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Top Bar */}
       <div className={`absolute ${isLandscape ? 'top-4 right-4 left-4' : 'top-6 right-6 left-6'} flex items-center justify-between gap-3 text-white/80 pointer-events-auto z-20`}>
         <div className="font-semibold text-lg flex items-center gap-2 bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
@@ -94,6 +118,22 @@ export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectN
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Voice Command Toggle Button */}
+          <button 
+            onClick={() => setVoiceEnabled(!voiceEnabled)}
+            className={`p-3 rounded-full backdrop-blur-md border border-white/10 transition-all shadow-lg flex items-center gap-1.5 ${
+              voiceEnabled && isListening 
+                ? 'bg-emerald-600/80 hover:bg-emerald-600 text-white ring-2 ring-emerald-400/50' 
+                : 'bg-black/20 hover:bg-black/40 text-white/70'
+            }`}
+            title={voiceEnabled ? 'التحكم الصوتي مفعّل (قل "وقف" أو "استمر")' : 'تفعيل التحكم الصوتي'}
+          >
+            {voiceEnabled ? <Mic size={20} className={isListening ? 'animate-pulse text-emerald-200' : ''} /> : <MicOff size={20} />}
+            <span className="text-xs font-medium hidden md:inline">
+              {voiceEnabled ? (isListening ? 'الاستماع...' : 'مفعل') : 'غير مفعل'}
+            </span>
+          </button>
+
           <button 
             onClick={handleRotateCamera}
             className="p-3 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md border border-white/10 transition-all shadow-lg flex items-center gap-1"
