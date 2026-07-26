@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { TimerMode } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Pause, Play, X, RotateCcw, AlertTriangle, Smartphone, RotateCw, Mic, MicOff, Volume2, Maximize2, Minimize2 } from 'lucide-react';
+import { Pause, Play, X, RotateCcw, AlertTriangle, Smartphone, RotateCw, Mic, MicOff, Volume2, Maximize2, Minimize2, ShieldAlert, Zap } from 'lucide-react';
 import SupervisorCamera from './SupervisorCamera';
 import { useVoiceControl } from '../hooks/useVoiceControl';
+import { useKeepAwake } from '../hooks/useKeepAwake';
 
 interface TimerScreenProps {
   mode: TimerMode;
@@ -61,6 +62,9 @@ export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectN
   const [voiceEnabled, setVoiceEnabled] = useState<boolean>(true);
   const [fitMode, setFitMode] = useState<'contain' | 'cover'>('contain'); // Default to wide room view (100% frame visibility)
 
+  // Automatic Keep-Awake & Periodic Screen Touch (Simulated Touch every 5 Minutes to prevent phone screen timeout)
+  const { isWakeLockActive, lastTouchTime, showTouchPulse } = useKeepAwake(true);
+
   // Initialize Voice Control for Arabic speech commands ("وقف العداد", "استمر", etc.)
   const { isListening, lastCommand } = useVoiceControl({
     onPause: onPauseTimer,
@@ -96,7 +100,7 @@ export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectN
         fitMode={fitMode}
       />
 
-      {/* Recognized Voice Command Notification Toast */}
+      {/* Recognized Voice Command & KeepAwake Touch Notification Toasts */}
       <AnimatePresence>
         {lastCommand && (
           <motion.div 
@@ -109,6 +113,18 @@ export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectN
             <span>تم استلام أمر صوتی: {lastCommand}</span>
           </motion.div>
         )}
+
+        {showTouchPulse && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1.1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="absolute top-28 z-40 bg-indigo-600/90 text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 border border-indigo-400/50"
+          >
+            <Zap size={16} className="text-amber-300 animate-spin" />
+            <span>لمس ذكي للشاشة (لمنع الانطفاء) ⚡ {lastTouchTime}</span>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Top Bar */}
@@ -117,6 +133,10 @@ export default function TimerScreen({ mode, timeLeft, isActive, cycles, subjectN
           {subjectName && <span>{subjectName}</span>}
           {subjectName && <span className="w-1.5 h-1.5 rounded-full bg-white/50" />}
           <span>{config.label}</span>
+          <span className="text-xs bg-indigo-500/80 text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-indigo-300/40">
+            <Zap size={12} className="text-amber-300 fill-amber-300" />
+            <span>منع النوم (كل 5د)</span>
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
