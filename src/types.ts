@@ -1,16 +1,13 @@
-export type TimerMode = 'IDLE' | 'FOCUS' | 'RECALL' | 'SHORT_BREAK' | 'LONG_REVIEW' | 'DAWN_REVIEW';
+export type TimerMode = 'IDLE' | 'MATCH_FOCUS' | 'MATCH_BREAK';
+
+export type ColorTheme = 'classic' | 'midnight' | 'forest' | 'ocean' | 'crimson' | 'sand';
+export type TimerStyle = 'circle' | 'digital' | 'bar' | 'stadium';
 
 export interface Subject {
   id: string;
   name: string;
   color: string;
-}
-
-export interface AbsenceRecord {
-  id: string;
-  startTime: string;
-  endTime?: string;
-  durationSeconds: number;
+  icon?: string;
 }
 
 export interface SessionRecord {
@@ -20,22 +17,22 @@ export interface SessionRecord {
   subjectName?: string;
   date: string;
   startTime: string;
-  focusSeconds: number;
-  downtimeSeconds: number;
-  absencesCount: number;
-  absences: AbsenceRecord[];
+  roundNumber: number; // 1, 2, 3, or 4
+  focusSeconds: number; // Time spent studying in this match
+  breakSeconds: number; // Time spent resting
+  pauseCount: number; // How many times user paused
   isCompleted: boolean;
 }
 
 export interface SavedSessionState {
   mode: TimerMode;
   timeLeft: number;
-  cycles: number;
+  completedRounds: number; // 0 to 4
+  currentRound: number; // 1 to 4
   activeSubject: string | null;
   sessionFocusSeconds: number;
-  sessionDowntimeSeconds: number;
-  absencesCount: number;
-  absences: AbsenceRecord[];
-  currentAbsenceStart: number | null;
+  sessionBreakSeconds: number;
+  pauseCount: number;
   lastSavedAt: number;
 }
+
